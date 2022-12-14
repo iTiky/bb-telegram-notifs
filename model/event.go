@@ -28,18 +28,20 @@ const (
 type Event struct {
 	bun.BaseModel `bun:"table:events,alias:e"`
 
-	ID                int64     `bun:",pk,autoincrement"`
-	Hash              string    // unique hash per event
-	Type              EventType // PR action type
-	RecipientTgID     int64     // destination user Telegram ID
-	RecipientTgChatID int64     // destination user Telegram chat ID
-	SenderName        string    // source user name (Bitbucket's DisplayName)
-	RepoProject       string    // source project
-	RepoName          string    // source repo name
-	PrID              int64     // source PR ID
-	PrTitle           string    // source PR title
-	PrURL             string    // source PR URL
-	CreatedAt         time.Time // event creation time (Bitbucket's Activity timestamp / PR creation timestamp)
+	ID                int64      `bun:",pk,autoincrement"`
+	Hash              string     // unique hash per event
+	Type              EventType  // PR action type
+	RecipientTgID     int64      // destination user Telegram ID
+	RecipientTgChatID int64      // destination user Telegram chat ID
+	SenderName        string     // source user name (Bitbucket's DisplayName)
+	RepoProject       string     // source project
+	RepoName          string     // source repo name
+	PrID              int64      // source PR ID
+	PrTitle           string     // source PR title
+	PrURL             string     // source PR URL
+	SendAck           bool       // whether the event was sent to the user (retry later if not)
+	SendAt            *time.Time // event send time (nil if not sent yet)
+	CreatedAt         time.Time  // event creation time (Bitbucket's Activity timestamp / PR creation timestamp)
 }
 
 // SetHash sets the event hash using the event data.

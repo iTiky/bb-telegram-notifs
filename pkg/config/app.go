@@ -11,6 +11,7 @@ import (
 const (
 	LogLevel         = "LogLevel"         // logging level [string]
 	FetchPeriod      = "FetchPeriod"      // period between BitBucket API fetches [time.Duration]
+	RetryPeriod      = "RetryPeriod"      // retry period to resend failed Telegram events [time.Duration]
 	EventsGCPeriod   = "EventsGCPeriod"   // period between events garbage collection (by createdAt) [time.Duration]
 	EventGCThreshold = "EventGCThreshold" // events older than this threshold will be deleted [time.Duration]
 )
@@ -18,6 +19,7 @@ const (
 func appSectionSetDefaults() {
 	viper.SetDefault(LogLevel, "debug")
 	viper.SetDefault(FetchPeriod, 1*time.Minute)
+	viper.SetDefault(RetryPeriod, 5*time.Minute)
 	viper.SetDefault(EventsGCPeriod, 3*time.Hour)
 	viper.SetDefault(EventGCThreshold, 7*24*time.Hour)
 }

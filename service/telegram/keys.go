@@ -5,7 +5,7 @@ const (
 	cmdRepos = "repos" // list registered repos with inline keyboard to subscribe/unsubscribe
 
 	cmdSetBBEmail       = "set_bb_email" // set BitBucket email
-	cmdSetBBEmailFormat = "/" + cmdSetBBEmail + " <email>"
+	cmdSetBBEmailFormat = `/set\_bb\_email <email>`
 )
 
 // Telegram callback data.

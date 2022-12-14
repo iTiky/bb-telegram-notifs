@@ -20,13 +20,30 @@ func (f *Fetcher) handleEvents(ctx context.Context, events []model.Event) {
 			logger.Error().Err(err).Msg("Failed to create event")
 			continue
 		}
-		if !eventCreated {
+		if eventCreated == nil {
 			continue
 		}
 
-		logger.Info().Msgf("Sending event: %s", e.String())
-		f.tgService.SendEventMessage(ctx, e)
+		f.sendEvent(ctx, *eventCreated)
 	}
+}
+
+// sendEvent sends an event to the Telegram service and ack it on success.
+func (f *Fetcher) sendEvent(ctx context.Context, event model.Event) bool {
+	_, logger := logging.GetCtxLogger(ctx)
+
+	if !f.tgService.SendEventMessage(ctx, event) {
+		logger.Warn().Msgf("Event send failed (will be retried later): %s", event.String())
+		return false
+	}
+
+	if err := f.storage.SetEventSendAck(ctx, event.ID); err != nil {
+		logger.Error().Err(err).Msg("Failed to set event send ack")
+		return false
+	}
+	logger.Info().Msgf("Event sent: %s", event.String())
+
+	return true
 }
 
 // buildPROpenEvent builds a new event for a new PR.

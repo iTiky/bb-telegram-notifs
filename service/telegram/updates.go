@@ -155,7 +155,7 @@ func (svc *Service) enrichCtxForHandling(ctx context.Context, tgLogin string, tg
 	if user == nil {
 		user, err = svc.storage.CreateUser(ctx, tgID, tgChatID, tgLogin)
 		if err != nil {
-			return ctx, logger, fmt.Errorf("creating inactive user")
+			return ctx, logger, fmt.Errorf("creating inactive user: %w", err)
 		}
 		logger.Info().Msg("Inactive user created")
 	}

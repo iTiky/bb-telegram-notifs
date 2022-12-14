@@ -20,13 +20,18 @@ type userSet map[string]model.User // key: bbEmail
 
 // StartWorkers starts the fetcher workers: activity poller and events GC.
 func (f *Fetcher) StartWorkers(ctx context.Context) error {
-	ctx, _ = logging.SetCtxLoggerStrFields(ctx,
+	ctx, logger := logging.SetCtxLoggerStrFields(ctx,
 		logging.KeyService, "bb_fetcher",
 	)
 
 	fetchPeriod := viper.GetDuration(config.FetchPeriod)
 	if fetchPeriod <= 0 {
 		return fmt.Errorf("invalid fetch period: %v", fetchPeriod)
+	}
+
+	retryPeriod := viper.GetDuration(config.RetryPeriod)
+	if retryPeriod <= 0 {
+		return fmt.Errorf("invalid retry period: %v", retryPeriod)
 	}
 
 	gcPeriod := viper.GetDuration(config.EventsGCPeriod)
@@ -38,6 +43,13 @@ func (f *Fetcher) StartWorkers(ctx context.Context) error {
 	if gcThresholdDur <= 0 {
 		return fmt.Errorf("invalid event GC threshold: %v", gcThresholdDur)
 	}
+
+	logger.Info().
+		Dur("fetch_period", fetchPeriod).
+		Dur("retry_period", retryPeriod).
+		Dur("gc_period", gcPeriod).
+		Dur("gc_threshold", gcThresholdDur).
+		Msg("Workers started")
 
 	go func() {
 		for {
@@ -59,6 +71,11 @@ func (f *Fetcher) StartWorkers(ctx context.Context) error {
 					events = append(events, f.fetchRepo(ctx, repo)...)
 				}
 				f.handleEvents(ctx, events)
+			case <-time.Tick(retryPeriod):
+				ctx = pkg.ContextWithCorrelationID(ctx)
+				ctx, _ := f.Logger(ctx, "events_retry")
+
+				f.runEventsRetry(ctx)
 			case <-time.Tick(gcPeriod):
 				ctx = pkg.ContextWithCorrelationID(ctx)
 				ctx, _ := f.Logger(ctx, "events_gc")

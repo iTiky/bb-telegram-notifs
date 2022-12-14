@@ -10,7 +10,7 @@ import (
 )
 
 // SendEventMessage sends a message to the user about the BitBucket PR's event.
-func (svc *Service) SendEventMessage(ctx context.Context, e model.Event) {
+func (svc *Service) SendEventMessage(ctx context.Context, e model.Event) bool {
 	var eventType string
 	switch e.Type {
 	case model.EventTypePROpen:
@@ -39,5 +39,5 @@ func (svc *Service) SendEventMessage(ctx context.Context, e model.Event) {
 		),
 	)
 
-	svc.sendMsg(ctx, e.RecipientTgChatID, text, withReplyMarkup(markup))
+	return svc.sendMsg(ctx, e.RecipientTgChatID, text, withReplyMarkup(markup))
 }
