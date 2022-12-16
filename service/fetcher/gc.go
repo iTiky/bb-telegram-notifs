@@ -16,6 +16,10 @@ func (f *Fetcher) runEventsGC(ctx context.Context, thesholdDur time.Duration) {
 		logger.Error().Err(err).Msg("List outdated events")
 		return
 	}
+	if len(eventIDs) == 0 {
+		logger.Info().Msg("No outdated events found")
+		return
+	}
 
 	if err := f.storage.DeleteEventByIDs(ctx, eventIDs); err != nil {
 		logger.Error().Err(err).Msg("Delete events")
@@ -34,6 +38,10 @@ func (f *Fetcher) runEventsRetry(ctx context.Context) {
 	events, err := f.storage.ListNonAckedEvents(ctx)
 	if err != nil {
 		logger.Error().Err(err).Msg("Failed to list non-acked events")
+		return
+	}
+	if len(events) == 0 {
+		logger.Info().Msg("No non-acked events found")
 		return
 	}
 

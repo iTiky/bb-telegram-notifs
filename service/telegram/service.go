@@ -15,8 +15,9 @@ import (
 
 // Service is a Telegram bot service that reacts to cmds, callbacks and message send requests.
 type Service struct {
-	bot     *tgbotapi.BotAPI
-	storage *storage.Psql
+	bot         *tgbotapi.BotAPI
+	storage     *storage.Psql
+	reconnectCh chan struct{}
 }
 
 // NewService creates a new Service instance.
@@ -31,8 +32,9 @@ func NewService(ctx context.Context, st *storage.Psql) (*Service, error) {
 	}
 
 	svc := &Service{
-		bot:     bot,
-		storage: st,
+		bot:         bot,
+		storage:     st,
+		reconnectCh: make(chan struct{}, 1),
 	}
 	svc.Logger(ctx).Info().Str("user", bot.Self.UserName).Msg("Bot initialized")
 

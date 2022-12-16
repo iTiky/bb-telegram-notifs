@@ -40,6 +40,17 @@ func (svc *Service) StartUpdatesHandling(ctx context.Context) error {
 				work = false
 			case update := <-updateCh:
 				svc.handleUpdate(ctx, update)
+			case <-svc.reconnectCh:
+				logger.Info().Msg("Resubscribing to Telegram updates")
+				svc.bot.StopReceivingUpdates()
+
+				lastUpdateID, err := svc.getLastUpdateID(ctx)
+				if err != nil {
+					logger.Error().Err(err).Msg("Resubscribing to Telegram updates: reading lastUpdateID")
+					break
+				}
+				updateConfig.Offset = lastUpdateID
+				updateCh = svc.bot.GetUpdatesChan(updateConfig)
 			}
 		}
 	}()

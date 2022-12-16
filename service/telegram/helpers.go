@@ -3,6 +3,7 @@ package telegram
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
@@ -29,6 +30,9 @@ func (svc *Service) sendMsg(ctx context.Context, chatID int64, text string, opts
 
 	if _, err := svc.bot.Send(msg); err != nil {
 		svc.Logger(ctx).Error().Err(err).Msg("Sending message")
+		if strings.Contains(err.Error(), "unexpected EOF") {
+			svc.reconnectCh <- struct{}{}
+		}
 		return false
 	}
 
