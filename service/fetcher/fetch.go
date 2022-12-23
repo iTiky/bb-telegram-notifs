@@ -52,11 +52,15 @@ func (f *Fetcher) StartWorkers(ctx context.Context) error {
 		Msg("Workers started")
 
 	go func() {
+		fetchCh := time.Tick(fetchPeriod)
+		retryCh := time.Tick(retryPeriod)
+		gcCh := time.Tick(gcPeriod)
+
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.Tick(fetchPeriod):
+			case <-fetchCh:
 				ctx = pkg.ContextWithCorrelationID(ctx)
 				ctx, logger := f.Logger(ctx, "fetch")
 
@@ -71,12 +75,12 @@ func (f *Fetcher) StartWorkers(ctx context.Context) error {
 					events = append(events, f.fetchRepo(ctx, repo)...)
 				}
 				f.handleEvents(ctx, events)
-			case <-time.Tick(retryPeriod):
+			case <-retryCh:
 				ctx = pkg.ContextWithCorrelationID(ctx)
 				ctx, _ := f.Logger(ctx, "events_retry")
 
 				f.runEventsRetry(ctx)
-			case <-time.Tick(gcPeriod):
+			case <-gcCh:
 				ctx = pkg.ContextWithCorrelationID(ctx)
 				ctx, _ := f.Logger(ctx, "events_gc")
 

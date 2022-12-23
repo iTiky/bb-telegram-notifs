@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog"
@@ -20,16 +21,6 @@ const (
 
 // StartUpdatesHandling starts handling Telegram updates.
 func (svc *Service) StartUpdatesHandling(ctx context.Context) error {
-	lastUpdateID, err := svc.getLastUpdateID(ctx)
-	if err != nil {
-		return fmt.Errorf("reading lastUpdateID: %w", err)
-	}
-
-	updateConfig := tgbotapi.NewUpdate(lastUpdateID)
-	updateConfig.Timeout = 5
-
-	updateCh := svc.bot.GetUpdatesChan(updateConfig)
-
 	go func() {
 		logger := svc.Logger(ctx)
 		ctx := logging.SetCtxLogger(ctx, *logger)
@@ -38,19 +29,24 @@ func (svc *Service) StartUpdatesHandling(ctx context.Context) error {
 			select {
 			case <-ctx.Done():
 				work = false
-			case update := <-updateCh:
+			case update, ok := <-svc.updateCh:
+				if !ok {
+					// Prevent a high CPU usage and wait for reconnectCh to be triggered
+					time.Sleep(1 * time.Second)
+					break
+				}
 				svc.handleUpdate(ctx, update)
 			case <-svc.reconnectCh:
 				logger.Info().Msg("Resubscribing to Telegram updates")
-				svc.bot.StopReceivingUpdates()
+				svc.disconnectFromTG()
 
-				lastUpdateID, err := svc.getLastUpdateID(ctx)
-				if err != nil {
-					logger.Error().Err(err).Msg("Resubscribing to Telegram updates: reading lastUpdateID")
-					break
+				if err := svc.connectToTG(ctx); err != nil {
+					logger.Error().
+						Err(err).
+						Msg("Reconnecting to Telegram")
+					time.Sleep(5 * time.Second)
+					svc.reconnectCh <- struct{}{}
 				}
-				updateConfig.Offset = lastUpdateID
-				updateCh = svc.bot.GetUpdatesChan(updateConfig)
 			}
 		}
 	}()
@@ -61,7 +57,7 @@ func (svc *Service) StartUpdatesHandling(ctx context.Context) error {
 // handleUpdate handles a single Telegram update.
 // Method acks the update immediately, check the sender authorization and passes the update to the appropriate handler.
 func (svc *Service) handleUpdate(ctx context.Context, update tgbotapi.Update) {
-	ctx, logger := logging.GetCtxLogger(ctx)
+	ctx, logger := logging.SetCtxLoggerStrFields(ctx, "update_id", strconv.Itoa(update.UpdateID))
 
 	// Update last handled update ID (ack update)
 	if err := svc.setLastUpdateID(ctx, update.UpdateID); err != nil {
