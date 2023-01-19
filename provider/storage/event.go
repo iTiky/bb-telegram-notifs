@@ -59,12 +59,12 @@ func (st *Psql) DeleteEventByIDs(ctx context.Context, IDs []int64) error {
 	return nil
 }
 
-// ListOutdatedEventIDs returns IDs of outdated events (by CreatedAt).
+// ListOutdatedEventIDs returns IDs of outdated events (by SendAt AND acked).
 func (st *Psql) ListOutdatedEventIDs(ctx context.Context, thresholdDur time.Duration) ([]int64, error) {
 	var events []model.Event
 	err := st.db.NewSelect().
 		Model(&events).
-		Where("created_at < ?", time.Now().Add(-thresholdDur)).
+		Where("send_at < ? AND send_ack = true", time.Now().Add(-thresholdDur)).
 		Scan(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("selecting events: %w", err)

@@ -23,6 +23,8 @@ func (svc *Service) SendEventMessage(ctx context.Context, e model.Event) bool {
 		eventType = "❌ PR DECLINED"
 	case model.EventTypeComment:
 		eventType = "💬 COMMENTED"
+	case model.EventTypeCommentReply:
+		eventType = "💬 REPLIED"
 	case model.EventTypePRUpdated:
 		eventType = "👥 PR UPDATED (reviewers changed)"
 	}

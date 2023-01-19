@@ -15,12 +15,13 @@ import (
 type EventType string
 
 const (
-	EventTypePROpen     EventType = "pr_open"
-	EventTypePRApproved EventType = "pr_approved"
-	EventTypePRRejected EventType = "pr_rejected"
-	EventTypePRMerged   EventType = "pr_merged"
-	EventTypePRUpdated  EventType = "pr_updated"
-	EventTypeComment    EventType = "comment"
+	EventTypePROpen       EventType = "pr_open"
+	EventTypePRApproved   EventType = "pr_approved"
+	EventTypePRRejected   EventType = "pr_rejected"
+	EventTypePRMerged     EventType = "pr_merged"
+	EventTypePRUpdated    EventType = "pr_updated"
+	EventTypeComment      EventType = "comment"
+	EventTypeCommentReply EventType = "comment_reply"
 )
 
 // Event defines an entry that is bridged to the Telegram bot.

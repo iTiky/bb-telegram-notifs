@@ -90,6 +90,8 @@ func buildPRActivityEvent(repo model.Repo, pr bbModel.PR, activity bbModel.PRAct
 		e.Type = model.EventTypePRMerged
 	case "DECLINED":
 		e.Type = model.EventTypePRRejected
+	case "RESCOPED":
+		e.Type = model.EventTypeCommentReply
 	default:
 		return nil
 	}
